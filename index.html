@@ -3,125 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini AI Chat</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <title>AI Chat Assistant - Gemini Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Background Particles -->
-    <div class="bg-particles" id="bgParticles"></div>
+    <!-- Particle Background -->
+    <div class="particles" id="particles"></div>
 
-    <!-- Main Chat Container -->
-    <div class="chat-wrapper">
+    <div class="chat-container">
         <!-- Header -->
         <header class="chat-header">
             <div class="header-left">
-                <div class="bot-avatar">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="url(#geminiGrad)"/>
-                        <path d="M8 12l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <defs>
-                            <linearGradient id="geminiGrad" x1="2" y1="2" x2="22" y2="22">
-                                <stop offset="0%" stop-color="#4285F4"/>
-                                <stop offset="50%" stop-color="#9B72CB"/>
-                                <stop offset="100%" stop-color="#D96570"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
                 </div>
-                <div class="header-info">
-                    <h1>Gemini AI</h1>
-                    <span class="status-badge" id="statusBadge">
-                        <span class="status-dot"></span> Online
-                    </span>
+                <div>
+                    <div class="header-title">AI Chat Assistant</div>
+                    <div class="header-status">
+                        <span class="status-dot"></span>
+                        <span>Online</span>
+                        <span class="status-separator">•</span>
+                        <span id="messageCount">0 pesan</span>
+                    </div>
                 </div>
             </div>
-            <div class="header-right">
-                <span class="model-badge" id="modelBadge">gemini-2.0-flash</span>
-                <button class="btn-icon" id="clearChatBtn" title="Hapus percakapan">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14"/>
-                    </svg>
+            <div class="header-actions">
+                <button class="btn-icon" id="exportBtn" title="Export Chat">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="btn-icon" id="clearBtn" title="Clear Chat">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="btn-icon" id="themeBtn" title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-icon" id="statsBtn" title="Statistics">
+                    <i class="fas fa-chart-bar"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Chat Messages Area -->
+        <!-- Messages -->
         <div class="chat-messages" id="chatMessages">
-            <!-- Welcome Message -->
-            <div class="message message-bot">
-                <div class="message-avatar">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="10" fill="url(#geminiGradSmall)"/>
-                        <path d="M8 12l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <defs>
-                            <linearGradient id="geminiGradSmall" x1="2" y1="2" x2="22" y2="22">
-                                <stop offset="0%" stop-color="#4285F4"/>
-                                <stop offset="100%" stop-color="#9B72CB"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-                <div class="message-content">
-                    <div class="message-bubble">
-                        <p>👋 Halo! Aku <strong>Gemini AI</strong>, asisten virtualmu. Ada yang bisa aku bantu hari ini?</p>
-                        <p class="message-subtle">Kamu bisa bertanya apa saja — coding, ide kreatif, riset, atau sekadar ngobrol santai.</p>
-                    </div>
-                    <span class="message-time" id="welcomeTime"></span>
-                </div>
-            </div>
+            <!-- Messages will be added here dynamically -->
         </div>
 
         <!-- Typing Indicator -->
-        <div class="typing-indicator" id="typingIndicator" style="display: none;">
-            <div class="message-avatar">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" fill="url(#geminiGradSmall)"/>
-                    <path d="M8 12l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </div>
+        <div class="typing-indicator" id="typingIndicator">
             <div class="typing-dots">
-                <span></span><span></span><span></span>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
             </div>
+            <span class="typing-text">AI sedang mengetik...</span>
         </div>
 
         <!-- Input Area -->
         <div class="chat-input-area">
-            <div class="input-container">
-                <textarea
-                    id="messageInput"
-                    class="message-input"
-                    placeholder="Ketik pesanmu di sini..."
-                    rows="1"
-                    maxlength="4000"
-                    autofocus
-                ></textarea>
-                <button class="btn-send" id="sendBtn" title="Kirim pesan">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
+            <div class="input-wrapper">
+                <div class="input-container">
+                    <textarea 
+                        id="userInput" 
+                        rows="1" 
+                        placeholder="Ketik pesan Anda di sini... (Shift+Enter untuk new line)"
+                    ></textarea>
+                    <div class="input-char-counter" id="charCounter">0</div>
+                </div>
+                <div class="input-actions">
+                    <button class="btn-icon" id="attachBtn" title="Attach file (Coming soon)">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <button class="btn-send" id="sendBtn">
+                        <span class="send-icon">➤</span>
+                        <span>Kirim</span>
+                    </button>
+                </div>
             </div>
-            <div class="input-footer">
-                <span class="char-count" id="charCount">0 / 4000</span>
-                <span class="hint-text">Tekan <kbd>Enter</kbd> untuk kirim · <kbd>Shift + Enter</kbd> untuk baris baru</span>
+            <div class="quick-actions">
+                <button class="quick-btn" data-prompt="Apa itu kecerdasan buatan?">🤔 AI</button>
+                <button class="quick-btn" data-prompt="Buatkan puisi tentang alam">📝 Puisi</button>
+                <button class="quick-btn" data-prompt="Jelaskan cara kerja internet">🌐 Internet</button>
+                <button class="quick-btn" data-prompt="Tips belajar efektif">📚 Belajar</button>
+                <button class="quick-btn" data-prompt="Buatkan kode HTML sederhana">💻 Kode</button>
+                <button class="quick-btn" data-prompt="Ceritakan tentang masa depan teknologi">🚀 Teknologi</button>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div class="toast" id="toast"></div>
+    <!-- Floating Action Button -->
+    <button class="fab" id="fab" title="Scroll to bottom">
+        <i class="fas fa-arrow-down"></i>
+    </button>
 
-    <!-- Config (API Key) -->
-    <script src="js/config.js"></script>
-    <!-- Main Script -->
-    <script src="js/script.js"></script>
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
