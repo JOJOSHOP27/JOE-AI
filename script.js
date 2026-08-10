@@ -75,6 +75,8 @@ class AIChat {
     
     createParticles() {
         const container = document.getElementById('particles');
+        if (!container) return;
+        
         const count = 30;
         
         for (let i = 0; i < count; i++) {
@@ -214,14 +216,25 @@ class AIChat {
             const code = pre.querySelector('code');
             if (code && !pre.dataset.copyAdded) {
                 pre.dataset.copyAdded = true;
+                pre.style.cursor = 'pointer';
+                pre.title = 'Klik untuk copy';
                 pre.addEventListener('click', () => {
                     const text = code.textContent;
                     navigator.clipboard.writeText(text).then(() => {
-                        const original = pre.getAttribute('data-copy-text') || '📋 Copy';
-                        pre.setAttribute('data-copy-text', '✅ Copied!');
+                        const originalText = pre.textContent;
+                        pre.innerHTML = '<span style="color: #00ff88;">✅ Tercopy!</span>';
                         setTimeout(() => {
-                            pre.removeAttribute('data-copy-text');
+                            pre.innerHTML = `<code>${this.escapeHtml(text)}</code>`;
                         }, 2000);
+                    }).catch(() => {
+                        // Fallback
+                        const textarea = document.createElement('textarea');
+                        textarea.value = text;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        alert('Kode berhasil dicopy!');
                     });
                 });
             }
@@ -256,4 +269,224 @@ class AIChat {
                         threshold: "BLOCK_MEDIUM_AND_ABOVE"
                     },
                     {
-                        category: "HARM_CATEGORY_SEXUALLY_EXPL
+                        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    }
+                ]
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.candidates || data.candidates.length === 0) {
+            throw new Error('Tidak ada respons dari AI');
+        }
+        
+        return data.candidates[0].content.parts[0].text;
+    }
+    
+    autoResize() {
+        this.userInput.style.height = 'auto';
+        this.userInput.style.height = Math.min(this.userInput.scrollHeight, 120) + 'px';
+    }
+    
+    updateCharCounter() {
+        const count = this.userInput.value.length;
+        if (this.charCounter) {
+            this.charCounter.textContent = count;
+        }
+    }
+    
+    scrollToBottom() {
+        setTimeout(() => {
+            this.chatMessages.scrollTo({
+                top: this.chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 100);
+    }
+    
+    toggleFAB() {
+        if (!this.fab) return;
+        const isNearBottom = this.chatMessages.scrollHeight - 
+            this.chatMessages.scrollTop - 
+            this.chatMessages.clientHeight < 100;
+        
+        this.fab.classList.toggle('show', !isNearBottom);
+    }
+    
+    updateMessageCount() {
+        if (this.messageCountDisplay) {
+            this.messageCountDisplay.textContent = `${this.messages.length} pesan`;
+        }
+    }
+    
+    clearChat() {
+        if (this.messages.length === 0) {
+            this.addMessage('Chat sudah kosong. Mulai percakapan baru!', 'ai');
+            return;
+        }
+        
+        if (confirm('Hapus semua pesan?')) {
+            this.chatMessages.innerHTML = '';
+            this.messages = [];
+            localStorage.removeItem('chatMessages');
+            this.addMessage('Chat dibersihkan. Ada yang bisa saya bantu?', 'ai');
+            this.updateMessageCount();
+        }
+    }
+    
+    exportChat() {
+        if (this.messages.length === 0) {
+            alert('Tidak ada pesan untuk diekspor.');
+            return;
+        }
+        
+        const text = this.messages.map(msg => {
+            const sender = msg.sender === 'user' ? '👤 User' : '🤖 AI';
+            const time = new Date(msg.time).toLocaleString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+            return `[${time}] ${sender}:\n${msg.text}\n`;
+        }).join('\n---\n\n');
+        
+        const header = `=== AI Chat Export ===\nTanggal: ${new Date().toLocaleString('id-ID')}\nTotal Pesan: ${this.messages.length}\n\n`;
+        const fullText = header + text;
+        
+        const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chat-export-${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Feedback
+        this.addMessage('✅ Chat berhasil diekspor!', 'ai');
+    }
+    
+    toggleTheme() {
+        this.isDarkTheme = !this.isDarkTheme;
+        document.documentElement.setAttribute('data-theme', this.isDarkTheme ? 'dark' : 'light');
+        if (this.themeBtn) {
+            this.themeBtn.innerHTML = this.isDarkTheme ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+        }
+        localStorage.setItem('theme', this.isDarkTheme ? 'dark' : 'light');
+    }
+    
+    loadTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            this.isDarkTheme = savedTheme === 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (this.themeBtn) {
+                this.themeBtn.innerHTML = this.isDarkTheme ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+            }
+        }
+    }
+    
+    saveDraft() {
+        const text = this.userInput.value;
+        if (text.trim()) {
+            localStorage.setItem('chatDraft', text);
+        } else {
+            localStorage.removeItem('chatDraft');
+        }
+    }
+    
+    loadDraft() {
+        const draft = localStorage.getItem('chatDraft');
+        if (draft) {
+            this.userInput.value = draft;
+            this.autoResize();
+            this.updateCharCounter();
+        }
+    }
+    
+    saveMessages() {
+        try {
+            localStorage.setItem('chatMessages', JSON.stringify(this.messages));
+        } catch (e) {
+            console.warn('Gagal menyimpan pesan:', e);
+        }
+    }
+    
+    loadMessages() {
+        try {
+            const saved = localStorage.getItem('chatMessages');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    this.messages = parsed;
+                    // Render saved messages
+                    this.messages.forEach(msg => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = `message ${msg.sender}`;
+                        
+                        const avatar = document.createElement('div');
+                        avatar.className = 'message-avatar';
+                        avatar.textContent = msg.sender === 'user' ? '👤' : '🤖';
+                        
+                        const content = document.createElement('div');
+                        content.className = 'message-content';
+                        content.innerHTML = this.formatMessage(msg.text);
+                        
+                        const time = document.createElement('span');
+                        time.className = 'message-time';
+                        time.textContent = new Date(msg.time).toLocaleTimeString('id-ID', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: false
+                        });
+                        
+                        messageDiv.appendChild(avatar);
+                        messageDiv.appendChild(content);
+                        messageDiv.appendChild(time);
+                        
+                        this.chatMessages.appendChild(messageDiv);
+                    });
+                    this.scrollToBottom();
+                    this.updateMessageCount();
+                }
+            }
+        } catch (e) {
+            console.warn('Gagal memuat pesan:', e);
+        }
+    }
+    
+    showStats() {
+        const totalMessages = this.messages.length;
+        const userMessages = this.messages.filter(m => m.sender === 'user').length;
+        const aiMessages = this.messages.filter(m => m.sender === 'ai').length;
+        
+        alert(
+            `📊 Statistik Chat\n\n` +
+            `Total Pesan: ${totalMessages}\n` +
+            `👤 User: ${userMessages}\n` +
+            `🤖 AI: ${aiMessages}\n` +
+            `💾 Pesan Tersimpan: ${localStorage.getItem('chatMessages') ? 'Ya' : 'Tidak'}\n` +
+            `🌓 Tema: ${this.isDarkTheme ? 'Gelap' : 'Terang'}`
+        );
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    const chat = new AIChat();
+});
